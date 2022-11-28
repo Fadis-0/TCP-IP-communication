@@ -1,54 +1,33 @@
+import java.util.*;
 import java.io.*;
 import java.net.*;
 
-class Client {
+public class Client  {
+	static final int port = 8080;
+	public static void main(String[] args) throws Exception{
+		Socket socket = new Socket("localhost", port);
+		System.out.println("Socket : " + socket);
+		BufferedReader plec = new BufferedReader(
+				new InputStreamReader(socket.getInputStream())
+			);
+		PrintWriter pred = new PrintWriter(
+				new BufferedWriter(
+						new OutputStreamWriter(socket.getOutputStream())), true
+			);
 
-	public static void main(String[] args) throws Exception {
-		// Setting the Buffer
-		int taille = 1024;
-		BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-		byte buffer[] = new byte[taille];		
+		String str = "bonjour";
 
-		// Enter server ip adress
-		System.out.print("Server IP adress   : ");
-		InetAddress adress = InetAddress.getByName(input.readLine());
-
-		// Enter server port number
-		System.out.print("Server Port number : ");
-		int port = Integer.parseInt(input.readLine());
-
-		// Connected
-		System.out.println("\nConnetcted to server ("+adress.getHostAddress()+":"+port+")");
-		
-		// Initiating a socket
-		DatagramSocket socket = new DatagramSocket();
-
-		while (true) {
-			//Clearing the Buffer
-			buffer = new byte[taille];
-
-			// Writing a message
-			System.out.print("\nClient -> ");
-			String line = input.readLine();
-			int length = line.length();
-			buffer = line.getBytes();
-
-			// Sending the Packet
-			DatagramPacket dataSent = new DatagramPacket(buffer, length, adress, port);
-			socket.send(dataSent);
-
-			//Clearing the Buffer
-			buffer = new byte[taille];
-
-			// Recieving a Packet
-			DatagramPacket dataReceived = new DatagramPacket(buffer, buffer.length);
-			socket.receive(dataReceived);
-
-			// Message recieved
-			System.out.println("Server -> "+ new String(dataReceived.getData()));
-
-
+		for (int i=0; i<10; i++) {
+			pred.println(str);
+			str = plec.readLine();
 		}
 
+		System.out.println("END");
+
+		pred.println("END");
+		
+		plec.close();
+		pred.close();
+		socket.close();
 	}
 }

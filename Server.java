@@ -1,46 +1,86 @@
+import java.util.*;
 import java.io.*;
 import java.net.*;
 
-class Server {
 
+public class Server  {
+	static final int port = 8080;
 	public static void main(String[] args) throws Exception{
+		ServerSocket s = new ServerSocket(port);
+		s.setReuseAddress(true);
 
-		int taille = 1024;
-		byte buffer[] = new byte[taille];
 		
-		// Set Port number
-		System.out.print("Enter Port number : ");
-		BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-		int port = Integer.parseInt(input.readLine());
+
 		
-		// Initiating a socket on that port
-		DatagramSocket socket = new DatagramSocket(port);
-
-		System.out.println("Waiting for connections...");
-
 
 
 		while(true){
-			// Clearing the buffer
-			buffer = new byte[taille];
 
-			// Receiving a Packet
-			DatagramPacket data = new DatagramPacket(buffer, buffer.length);
-			socket.receive(data);
-			System.out.println("\nFrom ("+data.getAddress().getHostAddress()+":"+data.getPort()+")\n Client -> "+ new String(data.getData()));
+			Socket soc = s.accept();
 
-			// Clearing the buffer
-			buffer = new byte[taille];
+			System.out.println("New client connected : " + soc.getInetAddress().getHostAddress() +":"+ soc.getPort());
 
-			// Writing a message
-			System.out.print(" Server -> ");
-			String line = input.readLine();
-			buffer = line.getBytes();
+			ClientHandler clientSock = new ClientHandler(soc);
 
-			// Sending the Packet
-			DatagramPacket send = new DatagramPacket(buffer, buffer.length, data.getAddress(), data.getPort());
-			socket.send(send);
+			new Thread(clientSock).start();
 		}
 
+
+		
+		
 	}
 }
+
+class ClientHandler implements Runnable {
+	private final Socket clientSocket;
+
+	public ClientHandler(Socket socket){
+		this.clientSocket = socket;
+	}
+
+	public void run(){
+			
+		PrintWriter pred = null;
+		BufferedReader plec = null;
+		
+		try {
+					
+				// get the outputstream of client
+				pred = new PrintWriter(
+					clientSocket.getOutputStream(), true);
+
+				// get the inputstream of client
+				plec = new BufferedReader(
+					new InputStreamReader(
+						clientSocket.getInputStream()));
+
+				String str;
+				while ((str = plec.readLine()) != null) {
+
+					// writing the received message from
+					// client
+					System.out.printf(
+						"Echo : %s\n",
+						str);
+					pred.println(str);
+				}
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+			}
+			finally {
+				try {
+					if (pred != null) {
+						pred.close();
+					}
+					if (plec != null) {
+						plec.close();
+						clientSocket.close();
+					}
+				}
+				catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
